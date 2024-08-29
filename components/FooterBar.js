@@ -25,7 +25,7 @@ const FooterBar = () => {
                         <div class="mt-3 grid space-y-3">
                             <p><a class="inline-flex gap-x-2 text-gray-900 hover:text-gray-700 focus:outline-none focus:text-gray-700 dark:text-neutral-900 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">About us</a></p>
                             <p><a class="inline-flex gap-x-2 text-gray-900 hover:text-gray-700 focus:outline-none focus:text-gray-700 dark:text-neutral-900 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Blog</a></p>
-                            <p><a class="inline-flex gap-x-2 text-gray-900 hover:text-gray-700 focus:outline-none focus:text-gray-700 dark:text-neutral-900 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Careers</a> <span class="inline-block ms-1 text-xs bg-blue-700 text-white py-1 px-2 rounded-lg">We're hiring</span></p>
+                            <p><a class="inline-flex gap-x-2 text-gray-900 hover:text-gray-700 focus:outline-none focus:text-gray-700 dark:text-neutral-900 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Careers</a> <span class="inline-block ms-1 text-xs bg-blue-700 text-white py-1 px-2 rounded-lg">Were hiring</span></p>
                             <p><a class="inline-flex gap-x-2 text-gray-900 hover:text-gray-700 focus:outline-none focus:text-gray-700 dark:text-neutral-900 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Customers</a></p>
                         </div>
                     </div>
