@@ -2,6 +2,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import TopHeader from "@/components/TopHeader";
 import FooterBar from "@/components/FooterBar";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,10 +15,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`bg-gray-100 ${inter.className}`}>
+        <AntdRegistry>
       <TopHeader/>
-        {children}
+      <div className="">
+      {children}
+      </div>
         <FooterBar/>
+        </AntdRegistry>
         </body>
     </html>
   );
