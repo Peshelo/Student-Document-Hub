@@ -46,22 +46,27 @@ const Page = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       // Make POST request to /admin endpoint
-      // fetch('/admin', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // })
-      //   .then((response) => response.json())
-      //   .then((data) => {
-      //     // Handle success
-      //     setIsSubmitted(true);
-      //   })
-      //   .catch((error) => {
-      //     // Handle error
-      //     console.error('Error:', error);
-      //   });
+      const baseUrl = 'http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087'
+      fetch(baseUrl + '/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // Handle success
+          if (data.error) {
+            console.error(data.error);
+            return;
+          }
+          setIsSubmitted(true);
+        })
+        .catch((error) => {
+          // Handle error
+          console.error('Error:', error);
+        });
       setIsSubmitted(true); // Simulate successful submission
     }
   };

@@ -1,6 +1,7 @@
 "use client"
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
+import { getCookie } from '@/lib/utils';
 
 const Page = () => {
   const [email, setEmail] = useState('');
@@ -12,12 +13,12 @@ const Page = () => {
   const handlePasswordChange = (e) => setPassword(e.target.value);
 
   const validateForm = () => {
-    if (!email.includes('@')) {
-      setError('Please include a valid email address.');
+    if (!email) {
+      setError('Please include an email address.');
       return false;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    if (password.length < 2) {
+      setError('Password must be at least 2 characters long.');
       return false;
     }
     return true;
@@ -30,17 +31,28 @@ const Page = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch('http://ec2-54-211-210-11.compute-1.amazonaws.com:8078/v1/auth/login', {
+      const response = await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8078/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: email, password }),
       });
+      console.log(response.status);
+      if (response.status == 200) {
+        // save token to cookie with expiry of 1 day
+        const data = await response.json();
+        document.cookie = `token=${data.access_token};max-age=86400;path=/`;
+        document.cookie = `username=${email};max-age=86400;path=/`;
 
-      if (response.status === 200) {
-        navigate/push('/');
-      } else if (response.status === 408) {
+        // Get stored cookie
+        const token = document.cookie.replace(/(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/, '$1');
+        const username = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, '$1');
+
+        console.log(username);
+        
+        navigate.push('/');
+      } else if (response.status == 422) {
         navigate.push('/auth/set-password');
       } else {
         const data = await response.json();
@@ -59,7 +71,7 @@ const Page = () => {
             <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">Sign in</h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
               Dont have an account yet?
-              <a className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500" href="/signup">
+              <a className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500" href="/auth/sign-up">
                 Sign up here
               </a>
             </p>
@@ -78,9 +90,9 @@ const Page = () => {
                   <label htmlFor="email" className="block text-sm mb-2 dark:text-white">Email address</label>
                   <div className="relative">
                     <input
-                      type="email"
-                      id="email"
-                      name="email"
+                      type="text"
+                      id="username"
+                      name="username"
                       value={email}
                       onChange={handleEmailChange}
                       className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"

@@ -1,19 +1,20 @@
+"use client";
 import FooterBar from "@/components/FooterBar";
 import Login from "@/components/Login";
 import TopHeader from "@/components/TopHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tag } from "lucide-react";
+import { Badge, Skeleton, Select, Input } from "antd";
+import { Tag, Heart } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from 'next/navigation';
 
-// Dummy data
-const documents = [
-  { id: 1, title: "Research Paper 1", author: "John Doe", date: "2024-08-28" },
-  { id: 2, title: "Study on Climate Change", author: "Jane Smith", date: "2024-08-25" },
-  { id: 3, title: "Machine Learning Basics", author: "Alice Johnson", date: "2024-08-22" },
-];
+const { Option } = Select;
 
+// Dummy data for recent additions and recommendations
 const recentAdded = [
   { id: 1, title: "New Perspectives in AI", date: "2024-08-27" },
   { id: 2, title: "Quantum Computing Intro", date: "2024-08-26" },
@@ -25,40 +26,42 @@ const recommendations = [
 ];
 
 // Custom DocumentCard component (without using Card component)
-function DocumentCard({ title, author, date }) {
+function DocumentCard({ document }) {
   return (
     <div className="border bg-white border-gray-300 p-4 flex flex-col">
       <div className="flex flex-row items-center gap-x-2 py-2 border-b">
-      <Avatar>
-      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-      <AvatarFallback>CN</AvatarFallback>
-    </Avatar>
-      <p className="text-sm text-blue-500">{author}</p>
+        <Avatar>
+          <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+          <AvatarFallback>{document?.userAccount?.fullname}</AvatarFallback>
+        </Avatar>
+        <p className="text-sm text-blue-500">{document?.userAccount?.fullname}</p>
       </div>
-    <div className="flex flex-row-reverse gap-x-2 items-center">
-    <Image src="/assets/images/pdf.png" width={60} height={60} alt="PDF icon" className="ml-4" style={{objectFit:'contain'}}/>
-<div className="">
-<h2 className="text-lg text-black font-medium">{title}</h2>
-      <p className="text-sm text-gray-500 text-justify">Delirium is a detrimental mental condition often seen in older, hospitalized patients and is currently hard to predict. In this study, we leverage electronic health records (EHR) to identify 7,492 UCSF patients and 19,...</p>
-      <div className="flex flex-row items-center gap-x-4 p-2">
-        <Tag className="bg-blue-500 text-white text-xs px-2 py-1">Research</Tag>
-        <Tag className="bg-green-500 text-white text-xs px-2 py-1">Science</Tag>
-        <label className="text-gray-500 text-sm my-2">June 2024 - 2.5 Rating</label>
+      <div className="flex flex-row justify-between gap-x-2 items-center">
+        <div>
+          <h2 className="text-lg text-black font-medium">{document?.title}</h2>
+          <p className="text-sm text-gray-500 text-justify">{document?.description}...</p>
+          <div className="flex flex-row items-center gap-x-4 p-2">
+            <Tag className="bg-green-500 text-white text-xs px-2 py-1">Tags</Tag>
+            <Badge color="blue" className="bg-blue-500 text-white text-xs px-2 py-1">{document?.keywords}</Badge>
+            <label className="text-gray-500 text-sm my-2">June 2024 - 2.5 Rating</label>
+          </div>
+        </div>
+        <Image src="/assets/images/pdf.png" width={60} height={60} alt="PDF icon" className="ml-4 object-contain" />
       </div>
-      
-</div>
-
-    </div>
-    <div className="text-sm border-t flex flex-row gap-x-2 text-gray-700 py-2 items-center">
-        <button variant="outline" className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs">Download</button>
-        <button variant="outline" className="rounded-xl text-blue-600 p-2 text-xs">Share</button>
+      <div className="text-sm border-t flex flex-row gap-x-2 text-gray-700 py-2 items-center">
+        <Link href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`} className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs">Download</Link>
+        <button className="rounded-xl text-blue-600 p-2 text-xs">Share</button>
+        <button className="ml-auto"><Heart className="text-red-500" /></button>
       </div>
     </div>
   );
 }
 
-// RecentAdded component
-function RecentAdded({ items }) {
+// RecentAdded component with skeleton loading
+function RecentAdded({ items, loading }) {
+  if (loading) {
+    return <Skeleton active paragraph={{ rows: 3 }} />;
+  }
   return (
     <Card className="border border-gray-300">
       <CardHeader>
@@ -77,8 +80,11 @@ function RecentAdded({ items }) {
   );
 }
 
-// Recommendations component
-function Recommendations({ items }) {
+// Recommendations component with skeleton loading
+function Recommendations({ items, loading }) {
+  if (loading) {
+    return <Skeleton active paragraph={{ rows: 3 }} />;
+  }
   return (
     <Card className="border border-gray-300">
       <CardHeader>
@@ -99,27 +105,123 @@ function Recommendations({ items }) {
 
 // Main Home component
 export default function Home() {
-  return (
-    <div className="max-w-[79rem]  mx-auto my-4 bg-gray-100">
-      <div className="container mx-auto p-4 flex">
+  const [documents, setDocuments] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
+  const fetchDocuments = async (searchParam = "", categoryId = null) => {
+    try {
+      setLoading(true);
+      const categoryFilter = categoryId ? `&categoryId=${categoryId}` : "";
+      const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/search?searchParam=${searchParam}&pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc${categoryFilter}`);
+      const data = await response.json();
+      setDocuments(data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await fetch("http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resource-category?pageNumber=0&pageSize=10");
+      const data = await response.json();
+      setCategories(data.content);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    const categoryId = searchParams.get('categoryId');
+    const searchParam = searchParams.get('searchParam') || "";
+    setSearchTerm(searchParam);
+    setSelectedCategory(categoryId);
+    fetchDocuments(searchParam, categoryId);
+  }, [searchParams]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleCategoryChange = (value) => {
+    setSelectedCategory(value);
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('searchParam', searchTerm);
+    if (selectedCategory) params.set('categoryId', selectedCategory);
+    router.push(`?${params.toString()}`);
+  };
+
+  return (
+    <div className="max-w-[79rem] mx-auto my-4 bg-gray-100">
+      <div className="container mx-auto p-4 flex flex-col md:flex-row gap-4">
+        {/* Left Column: Filters */}
+        <div className="md:w-1/6 space-y-2">
+          <h1 className="text-lg font-bold text-black mb-3">Filters</h1>
+          {loadingCategories ? (
+            <Skeleton active paragraph={{ rows: 4 }} />
+          ) : (
+            <>
+              <Input
+                placeholder="Search documents..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="mb-2"
+              />
+              <Select
+                placeholder="Select Category"
+                className="w-full"
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+              >
+                {categories.map(category => (
+                  <Option key={category.id} value={category.id}>
+                    {category.name}
+                  </Option>
+                ))}
+              </Select>
+              <Button onClick={handleSearch} className="mt-2 w-full bg-blue-500 text-white">Search</Button>
+            </>
+          )}
+        </div>
 
         {/* Middle Column: Document List */}
-        <div className="w-4/6 p-2">
+        <div className="w-full md:w-4/6 p-2">
           <h1 className="text-xl font-bold text-black mb-3">Document List</h1>
           <div className="space-y-3">
-            {documents.map((doc) => (
-              <DocumentCard key={doc.id} title={doc.title} author={doc.author} date={doc.date} />
-            ))}
+            {loading ? (
+              <>
+                <Skeleton active paragraph={{ rows: 3 }} />
+                <Skeleton active paragraph={{ rows: 3 }} />
+                <Skeleton active paragraph={{ rows: 3 }} />
+              </>
+            ) : (
+              documents.map((doc) => (
+                <DocumentCard key={doc.id} document={doc} />
+              ))
+            )}
           </div>
         </div>
 
         {/* Right Column: Recent and Recommended */}
-        <div className="w-2/6 p-2 space-y-4">
-        <h1 className="text-xl font-bold text-black mb-3">Updates</h1>
+        <div className="w-full space-y-2 md:w-1/6">
+        <h2 className="text-lg mb-5 font-medium">Recommendations</h2>
 
-          <RecentAdded items={recentAdded} />
-          <Recommendations items={recommendations} />
+          <RecentAdded items={recentAdded} loading={loading} />
+          <Recommendations items={recommendations} loading={loading} />
         </div>
       </div>
     </div>
