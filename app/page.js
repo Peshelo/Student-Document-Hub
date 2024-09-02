@@ -9,7 +9,7 @@ import { Badge, Skeleton, Select, Input, message } from "antd";
 import { Tag, Heart, ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import Cookie from 'js-cookie';
 
@@ -187,7 +187,7 @@ const RecentAdded = () => {
         <ul className="text-sm text-gray-700">
           {items.map((item) => (
             <li key={item.id} className="mb-1">
-              <Link target="_blank" href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${item.uri}`}>{item.title}</Link>  <span className="text-gray-500">({item.createdOn.split('T')[0]})</span>
+              <Link target="_blank" href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`}>{item.title}</Link>  <span className="text-gray-500">({item.createdOn.split('T')[0]})</span>
             </li>
           ))}
         </ul>
@@ -395,9 +395,12 @@ export default function Home() {
           {/* Right Column: Recent and Recommended */}
           <div className="w-full space-y-2 md:w-1/6">
             <h2 className="text-lg mb-5 font-medium">Recommendations</h2>
-
-            <RecentAdded items={recentAdded} loading={loading} />
-            <Recommendations items={recommendations} loading={loading} />
+<Suspense>
+              <Recommendations items={recommendations} loading={loading} />
+</Suspense>
+<Suspense>
+              <RecentAdded items={recentAdded} loading={loading} />
+</Suspense>
           </div>
         </div>
       </div>
