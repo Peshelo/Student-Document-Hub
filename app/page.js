@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import Cookie from 'js-cookie';
+import ViewPdf from "@/components/view-pdf/viewPdf";
 
 const { Option } = Select;
 
@@ -30,6 +31,23 @@ const recommendations = [
 
 function DocumentCard({ document, handleLike, handleDislike }) {
   const token = Cookie.get('token');
+  const [isView,setIsView] = useState(false)
+  const renderPopContent = (uri) => {
+
+    if (!uri) return <p>No document found</p>
+
+    if (uri.toString().includes('pdf')) {
+      return <div onClick={()=>setIsView(!isView)} className="top-0 fixed w-screen h-screen z-20 left-0 flex flex-row justify-center items-center backdrop-blur-sm overflow-y-auto">
+        <div onClick={(e)=>e.stopPropagation()}>
+        <ViewPdf  pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
+        </div>
+      </div>
+    } else {
+      return <div onClick={()=>setIsView(!isView)} className="bg-white fixed w-screen h-screen  z-20  max-md:h-full max-md:w-full overflow-y-auto">
+        <img onClick={(e)=>e.stopPropagation()} src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Proof of Payment" className="mb-4 w-full" />
+      </div>
+    }
+  };
 
   const like = async () => {
     try {
@@ -119,8 +137,9 @@ function DocumentCard({ document, handleLike, handleDislike }) {
       </div>
       <div className="text-sm border-t flex flex-row gap-x-2 text-gray-700 py-2 items-center">
         <Link target="_blank" href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`} className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs">Download</Link>
+        <button onClick={()=>setIsView(!isView)} className="border border-orange-600 rounded-xl hover:bg-blue-50 text-orange-600 p-2 text-xs">View</button>
         <button className="rounded-xl text-blue-600 p-2 text-xs flex items-center gap-x-1" onClick={() => share('facebook')}>
-          <Share2 className="text-blue-600" size={10}/> Facebook
+          <Share2 className="text-blue-600" size={10} /> Facebook
         </button>
         <button className="rounded-xl text-green-600 p-2 text-xs flex items-center gap-x-1" onClick={() => share('whatsapp')}>
           <Share2 size={10} className="text-green-600" /> WhatsApp
@@ -135,6 +154,12 @@ function DocumentCard({ document, handleLike, handleDislike }) {
           </button>
         </div>
       </div>
+
+{isView &&
+  <p>{renderPopContent(document.uri)}</p>
+}
+      
+
     </div>
   );
 }
@@ -300,19 +325,36 @@ export default function Home() {
   };
 
   const handleLike = (updatedDocument) => {
-    setDocuments((prevDocuments) => 
-      prevDocuments.map((doc) => 
+    setDocuments((prevDocuments) =>
+      prevDocuments.map((doc) =>
         doc.id === updatedDocument.id ? updatedDocument : doc
       )
     );
   };
 
   const handleDislike = (updatedDocument) => {
-    setDocuments((prevDocuments) => 
-      prevDocuments.map((doc) => 
+    setDocuments((prevDocuments) =>
+      prevDocuments.map((doc) =>
         doc.id === updatedDocument.id ? updatedDocument : doc
       )
     );
+  };
+
+
+  const renderPopContent = (uri) => {
+
+    if (!uri) return <p>No document found</p>;
+
+    if (uri.toString().includes('pdf')) {
+      return <div className="bg-white w-full z-20 h-1/2 max-md:w-full">
+        <ViewPdf pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
+      </div>
+    } else {
+      return <div className="bg-white z-20 w-full h-[500px] max-md:h-full max-md:w-full overflow-y-auto">
+        <img src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Proof of Payment" className="mb-4 w-full" />
+
+      </div>
+    }
   };
 
   useEffect(() => {
@@ -386,7 +428,10 @@ export default function Home() {
                 </>
               ) : (
                 documents.map((doc) => (
-                  <DocumentCard key={doc.id} document={doc} handleLike={handleLike} handleDislike={handleDislike} />
+                  <>
+                   <DocumentCard key={doc.id} document={doc} handleLike={handleLike} handleDislike={handleDislike} />
+                  </>
+                 
                 ))
               )}
             </div>
@@ -395,12 +440,12 @@ export default function Home() {
           {/* Right Column: Recent and Recommended */}
           <div className="w-full space-y-2 md:w-1/6">
             <h2 className="text-lg mb-5 font-medium">Recommendations</h2>
-<Suspense>
+            <Suspense>
               <Recommendations items={recommendations} loading={loading} />
-</Suspense>
-<Suspense>
+            </Suspense>
+            <Suspense>
               <RecentAdded items={recentAdded} loading={loading} />
-</Suspense>
+            </Suspense>
           </div>
         </div>
       </div>
