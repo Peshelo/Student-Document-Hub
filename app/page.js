@@ -31,20 +31,20 @@ const recommendations = [
 
 function DocumentCard({ document, handleLike, handleDislike }) {
   const token = Cookie.get('token');
-  const [isView,setIsView] = useState(false)
+  const [isView, setIsView] = useState(false)
   const renderPopContent = (uri) => {
 
     if (!uri) return <p>No document found</p>
 
     if (uri.toString().includes('pdf')) {
-      return <div onClick={()=>setIsView(!isView)} className="top-0 fixed w-screen h-screen z-20 left-0 flex flex-row justify-center items-center backdrop-blur-sm overflow-y-auto">
-        <div onClick={(e)=>e.stopPropagation()}>
-        <ViewPdf  pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
+      return <div onClick={() => setIsView(!isView)} className="top-0 fixed w-screen h-screen z-20 left-0 flex flex-row justify-center items-center backdrop-blur-sm overflow-y-auto">
+        <div onClick={(e) => e.stopPropagation()}>
+          <ViewPdf pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
         </div>
       </div>
     } else {
-      return <div onClick={()=>setIsView(!isView)} className="bg-white fixed w-screen h-screen  z-20  max-md:h-full max-md:w-full overflow-y-auto">
-        <img onClick={(e)=>e.stopPropagation()} src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Proof of Payment" className="mb-4 w-full" />
+      return <div onClick={() => setIsView(!isView)} className="bg-white fixed w-screen h-screen  z-20  max-md:h-full max-md:w-full overflow-y-auto">
+        <img onClick={(e) => e.stopPropagation()} src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Proof of Payment" className="mb-4 w-full" />
       </div>
     }
   };
@@ -127,17 +127,32 @@ function DocumentCard({ document, handleLike, handleDislike }) {
           <p className="text-sm text-gray-500 text-justify">{document?.description}...</p>
           <div className="flex flex-row items-center gap-x-4 p-2">
             <Tag className="bg-green-500 text-white text-xs px-2 py-1">Tags</Tag>
-            {document?.keywords.split(',').map((keyword) => (
-              <label key={keyword} className="bg-gray-100 text-gray-500 rounded-md text-xs px-2 py-1">{keyword}</label>
-            ))}
+            <p>{document?.keywords.includes(',') ? <div>
+              {document?.keywords.split(',').map((keyword) => (
+                <label key={keyword} className="bg-gray-100 text-gray-500 mr-1 rounded-md text-xs px-2 py-1">{keyword}</label>
+              ))}
+            </div>
+              :
+              <p className="bg-gray-100 text-gray-500 rounded-md text-xs px-2 py-1">{document?.keywords.toString()}</p>
+              }
+              </p>
+
           </div>
           <label className="text-gray-500 my-4 text-xs">Posted: {document.createdOn}</label>
         </div>
         <Image src="/assets/images/pdf.png" width={60} height={60} alt="PDF icon" className="ml-4 object-contain" />
       </div>
       <div className="text-sm border-t flex flex-row gap-x-2 text-gray-700 py-2 items-center">
+
+{/* <button 
+  className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs" 
+  onClick={() => downloadPDF(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`, document.title)}
+>
+  Download
+</button> */}
         <Link target="_blank" href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`} className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs">Download</Link>
-        <button onClick={()=>setIsView(!isView)} className="border border-orange-600 rounded-xl hover:bg-blue-50 text-orange-600 p-2 text-xs">View</button>
+        {/* <button className="border border-blue-600 rounded-xl hover:bg-blue-50 text-blue-600 p-2 text-xs" onClick={downloadPDF(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`, document.title)}>Download</button> */}
+        <button onClick={() => setIsView(!isView)} className="border border-orange-600 rounded-xl hover:bg-blue-50 text-orange-600 p-2 text-xs">View</button>
         <button className="rounded-xl text-blue-600 p-2 text-xs flex items-center gap-x-1" onClick={() => share('facebook')}>
           <Share2 className="text-blue-600" size={10} /> Facebook
         </button>
@@ -155,10 +170,10 @@ function DocumentCard({ document, handleLike, handleDislike }) {
         </div>
       </div>
 
-{isView &&
-  <p>{renderPopContent(document.uri)}</p>
-}
-      
+      {isView &&
+        <p>{renderPopContent(document.uri)}</p>
+      }
+
 
     </div>
   );
@@ -429,9 +444,9 @@ export default function Home() {
               ) : (
                 documents.map((doc) => (
                   <>
-                   <DocumentCard key={doc.id} document={doc} handleLike={handleLike} handleDislike={handleDislike} />
+                    <DocumentCard key={doc.id} document={doc} handleLike={handleLike} handleDislike={handleDislike} />
                   </>
-                 
+
                 ))
               )}
             </div>
