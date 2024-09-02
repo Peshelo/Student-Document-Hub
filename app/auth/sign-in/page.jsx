@@ -1,7 +1,8 @@
-"use client"
+"use client";
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { getCookie } from '@/lib/utils';
+import { jwtDecode } from 'jwt-decode';
 
 const Page = () => {
   const [email, setEmail] = useState('');
@@ -39,20 +40,29 @@ const Page = () => {
         body: JSON.stringify({ username: email, password }),
       });
       console.log(response.status);
-      if (response.status == 200) {
+      if (response.status === 200) {
         // save token to cookie with expiry of 1 day
         const data = await response.json();
         document.cookie = `token=${data.access_token};max-age=86400;path=/`;
         document.cookie = `username=${email};max-age=86400;path=/`;
-
+        console.log(jwtDecode(data.access_token))
+        const role = jwtDecode(data.access_token)?.resource_access?.OnlineResourceHub?.roles[0]
+        document.cookie = `userRole=${role};max-age=86400;path=/`;
         // Get stored cookie
         const token = document.cookie.replace(/(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/, '$1');
         const username = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, '$1');
+        const userRole = document.cookie.replace(/(?:(?:^|.*;\s*)userRole\s*=\s*([^;]*).*$)|^.*$/, '$1');
 
-        console.log(username);
-        
-        navigate.push('/');
-      } else if (response.status == 422) {
+        console.log(userRole)
+        if (userRole === "STUDENT") {
+          navigate.push('/');
+        } else if (userRole === "ADMIN") {
+          navigate.push('/admin');
+        } else {
+          alert("Account role not found");
+          return;
+        }
+      } else if (response.status === 422) {
         navigate.push('/auth/set-password');
       } else {
         const data = await response.json();
@@ -64,13 +74,17 @@ const Page = () => {
   };
 
   return (
-    <div className="w-screen top-0 z-10 h-5/6 p-10 backdrop-blur-md backdrop-brightness-50 justify-center items-center">
-      <div className="mt-7 w-[500px] h-fit bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700">
+    <div className="w-screen h-screen flex flex-col items-center justify-center p-10">
+      <div className="logo p-4 text-center">
+        <h1 className="text-2xl font-bold text-black">Academic</h1>
+        <p className="text-xs text-gray-700">RESOURCE HUB</p>
+      </div>
+      <div className="w-[500px] bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700">
         <div className="p-4 sm:p-7">
           <div className="text-center">
-            <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">Sign in</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Sign in</h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
-              Dont have an account yet?
+              Dont have an account yet?{' '}
               <a className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500" href="/auth/sign-up">
                 Sign up here
               </a>
@@ -78,7 +92,7 @@ const Page = () => {
           </div>
 
           <div className="mt-5">
-            <div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-1 before:border-t before:border-gray-200 before:mr-6 after:flex-1 after:border-t after:border-gray-200 after:ml-6 dark:text-neutral-500 dark:before:border-neutral-600 dark:after:border-neutral-600">
+            <div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-1 before:border-t before:border border-gray-200 before:mr-6 after:flex-1 after:border-t after:border border-gray-200 after:ml-6 dark:text-neutral-500 dark:before:border-neutral-600 dark:after:border-neutral-600">
               Or
             </div>
 
@@ -95,7 +109,7 @@ const Page = () => {
                       name="username"
                       value={email}
                       onChange={handleEmailChange}
-                      className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                      className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
                       required
                       aria-describedby="email-error"
                     />
@@ -114,7 +128,7 @@ const Page = () => {
                       name="password"
                       value={password}
                       onChange={handlePasswordChange}
-                      className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                      className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
                       required
                       aria-describedby="password-error"
                     />
@@ -127,7 +141,7 @@ const Page = () => {
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                      className="shrink-0 mt-0.5 border border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
                     />
                   </div>
                   <div className="ml-3">

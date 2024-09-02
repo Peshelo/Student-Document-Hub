@@ -26,7 +26,7 @@ const Page = () => {
     );
     const query = new URLSearchParams(filters).toString();
     const response = await fetch(
-      `http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/profile?pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc`,
+      `http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources?${query}&pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -53,6 +53,34 @@ const Page = () => {
     message.success("Document deleted successfully");
   };
 
+  const handleApprove = async (id) => {
+    const token = document.cookie.replace(
+      /(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/,
+      "$1"
+    );
+    await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/approve/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    fetchDocuments();
+    message.success("Document approved successfully");
+  };
+
+  const handleReject = async (id) => {
+    const token = document.cookie.replace(
+      /(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/,
+      "$1"
+    );
+    const reason = prompt("Please enter a reason for rejection:");
+    if (reason) {
+      await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/reject/${id}?reason=${encodeURIComponent(reason)}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchDocuments();
+      message.success("Document rejected successfully");
+    }
+  };
 
   const columns = [
     {
@@ -105,6 +133,23 @@ const Page = () => {
       key: "actions",
       render: (text, record) => (
         <Space size="middle">
+          <Button type="link" icon={<EyeOutlined />} href={record.uri} target="_blank">
+            View
+          </Button>
+          <Button
+            type="link"
+            icon={<CheckOutlined />}
+            onClick={() => handleApprove(record.id)}
+          >
+            Approve
+          </Button>
+          <Button
+            type="link"
+            icon={<CloseOutlined />}
+            onClick={() => handleReject(record.id)}
+          >
+            Reject
+          </Button>
           <Button
             type="link"
             danger
@@ -124,7 +169,7 @@ const Page = () => {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-bold mb-4">My Documents</h1>
+      <h1 className="text-2xl font-bold mb-4">Document Management</h1>
       <Space className="mb-4">
         <Search
           placeholder="Search by title"

@@ -64,19 +64,18 @@ const Page = () => {
       const uploadedUri = await handleFileUpload(values.file.file.originFileObj);
       setDocumentUri(uploadedUri);
 
-      const userData = 1
-      // await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/admin/profile', {
-      //   method: 'GET',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      // }).then((response) => response.json())
-      // .then((data) => userData = data.id);
-      // console.log(userData);
-      // if (!userData.ok) {
-      //   throw new Error('Failed to fetch user data.');
-      // }
+      const userData = await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/admin/profile', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: id }),
+      });
+      console.log(userData);
+      if (!userData.ok) {
+        throw new Error('Failed to fetch user data.');
+      }
 
       const resourceData = [
         {
@@ -85,11 +84,11 @@ const Page = () => {
           contributorDetails: {
             name: values.name,
             email: values.email,
-            studentOrtStaffId: userData,
+            studentOrtStaffId: userData.id,
           },
-          keywords: keywords.toString(),
+          keywords: keywords,
           uri: uploadedUri,
-          resourceCategoryIds: values.resourceCategoryIds ? [values.resourceCategoryIds] : [],
+          resourceCategoryIds: values.resourceCategoryIds ? [parseInt(values.resourceCategoryIds)] : [],
         }
       ];
 
@@ -110,7 +109,6 @@ const Page = () => {
       form.resetFields();
       setKeywords([]);
     } catch (error) {
-      console.error('Failed to upload document:', error);
       message.error('Failed to upload document.');
     } finally {
       setLoading(false);
@@ -122,7 +120,7 @@ const Page = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="p-8 w-full bg-gray-100 min-h-screen">
       <h1 className="text-2xl font-bold mb-6">Upload New Document</h1>
       <div className="mx-auto bg-white p-6 rounded-lg shadow-md">
         {loading ? (
@@ -137,7 +135,7 @@ const Page = () => {
               label="Title"
               rules={[{ required: true, message: 'Please enter the document title.' }]}
             >
-              <Input size='large' placeholder="Enter document title" />
+              <Input placeholder="Enter document title" />
             </Form.Item>
 
             <Form.Item
@@ -145,18 +143,16 @@ const Page = () => {
               label="Description"
               rules={[{ required: true, message: 'Please enter a description.' }]}
             >
-              <Input.TextArea size='large' placeholder="Enter document description" rows={4} />
+              <Input.TextArea placeholder="Enter document description" rows={4} />
             </Form.Item>
 
             <Form.Item
               name="file"
               label="File"
               valuePropName="file"
-              style={{ display: 'block' }}
               rules={[{ required: true, message: 'Please upload a file.' }]}
             >
               <Upload
-              style={{ display: 'block' }}
                 customRequest={({ file, onSuccess, onError }) => {
                   handleFileUpload(file)
                     .then((location) => {
@@ -211,7 +207,7 @@ const Page = () => {
                   label="Contributor name"
                   rules={[{ required: true, message: 'Please enter contributor name.' }]}
                 >
-                  <Input size='large' placeholder="Contributor name" />
+                  <Input placeholder="Contributor name" />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>
@@ -220,13 +216,13 @@ const Page = () => {
                   label="Contributor Email"
                   rules={[{ required: true, message: 'Please enter contributor email.' }]}
                 >
-                  <Input size='large' placeholder="Contributor email" />
+                  <Input placeholder="Contributor email" />
                 </Form.Item>
               </Col>
             </Row>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit" block size='large'>
+              <Button type="primary" htmlType="submit" block>
                 Submit
               </Button>
             </Form.Item>

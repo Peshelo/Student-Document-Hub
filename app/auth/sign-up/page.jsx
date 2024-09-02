@@ -1,4 +1,5 @@
 "use client"
+import Link from 'next/link';
 import React, { useState } from 'react';
 
 const Page = () => {
@@ -46,7 +47,7 @@ const Page = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       // Make POST request to /admin endpoint
-      const baseUrl = 'http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087'
+      const baseUrl = 'http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087';
       fetch(baseUrl + '/admin', {
         method: 'POST',
         headers: {
@@ -72,8 +73,12 @@ const Page = () => {
   };
 
   return (
-    <div className="w-screen top-0 z-10 h-5/6 p-10 backdrop-blur-md backdrop-brightness-50 justify-center items-center">
-      <div className="mt-7 w-[500px] h-fit bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700">
+    <div className="w-screen h-screen flex flex-col items-center justify-center p-10">
+       <div className="logo p-4 text-center">
+        <h1 className="text-2xl font-bold text-black">Academic</h1>
+        <p className="text-xs text-gray-700">RESOURCE HUB</p>
+      </div>
+      <div className="w-[500px] h-fit bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700">
         <div className="p-4 sm:p-7">
           <div className="text-center">
             <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
@@ -81,12 +86,12 @@ const Page = () => {
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-neutral-400">
               Already have an account?{' '}
-              <a
+              <Link
                 className="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500"
-                href="/login"
+                href="/auth/sign-in"
               >
                 Sign in here
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -105,7 +110,7 @@ const Page = () => {
                     type="text"
                     id="fullName"
                     name="fullName"
-                    className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
                     value={formData.fullName}
                     onChange={handleInputChange}
                   />
@@ -120,7 +125,7 @@ const Page = () => {
                     type="text"
                     id="username"
                     name="username"
-                    className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
                     value={formData.username}
                     onChange={handleInputChange}
                   />
@@ -135,7 +140,7 @@ const Page = () => {
                     type="email"
                     id="email"
                     name="email"
-                    className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
                     value={formData.email}
                     onChange={handleInputChange}
                   />
@@ -150,7 +155,7 @@ const Page = () => {
                     type="text"
                     id="phoneNumber"
                     name="phoneNumber"
-                    className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500"
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
                   />

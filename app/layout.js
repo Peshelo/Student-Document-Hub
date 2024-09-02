@@ -17,11 +17,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`bg-gray-100 ${inter.className}`}>
         <AntdRegistry>
-      <TopHeader/>
-      <div className="">
       {children}
-      </div>
-        <FooterBar/>
         </AntdRegistry>
         </body>
     </html>
