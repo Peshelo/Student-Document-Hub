@@ -29,9 +29,11 @@ const recommendations = [
 
 // Custom DocumentCard component (without using Card component)
 
-function DocumentCard({ document, handleLike, handleDislike }) {
+function DocumentCard({ document }) {
   const token = Cookie.get('token');
   const [isView, setIsView] = useState(false)
+  const [loading,setLoading] = useState(false)
+  const [likes,setLikes] = useState({})
   const renderPopContent = (uri) => {
 
     if (!uri) return <p>No document found</p>
@@ -49,6 +51,31 @@ function DocumentCard({ document, handleLike, handleDislike }) {
     }
   };
 
+  const fetchLikes = async (resourceId)=>{
+    try {
+      const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/likes/${resourceId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setLikes(data); // Extract items from the response
+    } catch (error) {
+      message.error('Failed to fetch recent items');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(()=>{
+    fetchLikes(document.id);
+
+  },[])
+
+
   const like = async () => {
     try {
       const response = await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/likes', {
@@ -62,7 +89,9 @@ function DocumentCard({ document, handleLike, handleDislike }) {
       if (response.ok) {
         const updatedDocument = await response.json();
         message.success('Document liked');
-        handleLike(updatedDocument);
+        // handleLike(updatedDocument);
+        setLikes(updatedDocument)
+
       }
     } catch (error) {
       console.error('Failed to like document:', error);
@@ -82,7 +111,9 @@ function DocumentCard({ document, handleLike, handleDislike }) {
       if (response.ok) {
         const updatedDocument = await response.json();
         message.success('Document disliked');
-        handleDislike(updatedDocument);
+        // handleDislike(updatedDocument);
+        setLikes(updatedDocument)
+
       }
     } catch (error) {
       console.error('Failed to dislike document:', error);
@@ -127,13 +158,13 @@ function DocumentCard({ document, handleLike, handleDislike }) {
           <p className="text-sm text-gray-500 text-justify">{document?.description}...</p>
           <div className="flex flex-row items-center gap-x-4 p-2">
             <Tag className="bg-green-500 text-white text-xs px-2 py-1">Tags</Tag>
-            <p>{document?.keywords.includes(',') ? <div>
+            <p>{document?.keywords ? <div>
               {document?.keywords.split(',').map((keyword) => (
                 <label key={keyword} className="bg-gray-100 text-gray-500 mr-1 rounded-md text-xs px-2 py-1">{keyword}</label>
               ))}
             </div>
               :
-              <p className="bg-gray-100 text-gray-500 rounded-md text-xs px-2 py-1">{document?.keywords.toString()}</p>
+              <p className="bg-gray-100 text-gray-500 rounded-md text-xs px-2 py-1">{document?.keywords}</p>
               }
               </p>
 
@@ -161,10 +192,11 @@ function DocumentCard({ document, handleLike, handleDislike }) {
         </button>
         <div className="flex flex-row items-center bg-gray-50 p-2 border rounded-xl gap-x-2 ml-auto">
           <button onClick={like} className="flex flex-row gap-x-1 items-center text-green-500">
-            {document?.likes.length} <ThumbsUp />
+            {likes?.totalLikes} <ThumbsUp />
           </button>
           <div className="border-r h-6 border-gray-300"></div>
           <button onClick={dislike} className="flex flex-row gap-x-1 items-center text-red-500">
+          {likes?.totalDislikes} 
             <ThumbsDown />
           </button>
         </div>
@@ -188,8 +220,9 @@ const RecentAdded = () => {
   useEffect(() => {
     const fetchItems = async () => {
       const token = Cookie.get('token'); // Retrieve the token from cookies
+
       try {
-        const response = await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/student?pageNumber=0&pageSize=2&sortBy=createdOn&sortDir=desc', {
+        const response = await fetch('http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/student?pageNumber=0&pageSize=4&sortBy=createdOn&sortDir=desc', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -224,7 +257,7 @@ const RecentAdded = () => {
         <h2 className="text-lg font-medium">Recently Added</h2>
       </CardHeader>
       <CardContent>
-        <ul className="text-sm text-gray-700">
+        <ul className="text-xs underline space-y-2 text-gray-700">
           {items.map((item) => (
             <li key={item.id} className="mb-1">
               <Link target="_blank" href={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${document.uri}`}>{item.title}</Link>  <span className="text-gray-500">({item.createdOn.split('T')[0]})</span>
@@ -280,7 +313,7 @@ const Recommendations = () => {
         <h2 className="text-lg font-medium">Recommended</h2>
       </CardHeader>
       <CardContent>
-        <ul className="text-sm text-gray-700">
+        <ul className="text-xs text-gray-700">
           {items.map((item) => (
             <li key={item.id} className="mb-1">
               <Link href={`http://localhost:3000/?categoryId=${item.id}`}>
@@ -297,22 +330,29 @@ const Recommendations = () => {
 
 
 // Main Home component
-export default function Home() {
+
+
+const Home = () => {
   const [documents, setDocuments] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [contributorName, setContributorName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = Cookie.get('token');
 
-  const fetchDocuments = async (searchParam = "", categoryId = null) => {
+  const fetchDocuments = async (params = {}) => {
     try {
       setLoading(true);
-      const categoryFilter = categoryId ? `&categoryId=${categoryId}` : "";
-      const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/student?pageNumber=0&pageSize=1000&sortBy=createdOn&sortDir=desc${categoryFilter}`, {
+      const queryString = new URLSearchParams(params).toString();
+      
+      const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/student?${queryString}&pageNumber=0&pageSize=1000&sortBy=createdOn&sortDir=desc`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
@@ -339,50 +379,36 @@ export default function Home() {
     }
   };
 
-  const handleLike = (updatedDocument) => {
-    setDocuments((prevDocuments) =>
-      prevDocuments.map((doc) =>
-        doc.id === updatedDocument.id ? updatedDocument : doc
-      )
-    );
-  };
-
-  const handleDislike = (updatedDocument) => {
-    setDocuments((prevDocuments) =>
-      prevDocuments.map((doc) =>
-        doc.id === updatedDocument.id ? updatedDocument : doc
-      )
-    );
-  };
-
-
-  const renderPopContent = (uri) => {
-
-    if (!uri) return <p>No document found</p>;
-
-    if (uri.toString().includes('pdf')) {
-      return <div className="bg-white w-full z-20 h-1/2 max-md:w-full">
-        <ViewPdf pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
-      </div>
-    } else {
-      return <div className="bg-white z-20 w-full h-[500px] max-md:h-full max-md:w-full overflow-y-auto">
-        <img src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Proof of Payment" className="mb-4 w-full" />
-
-      </div>
-    }
-  };
-
   useEffect(() => {
     fetchCategories();
-    const categoryId = searchParams.get('categoryId');
-    const searchParam = searchParams.get('searchParam') || "";
-    setSearchTerm(searchParam);
-    setSelectedCategory(categoryId);
-    fetchDocuments(searchParam, categoryId);
+    const params = Object.fromEntries([...searchParams.entries()]);
+    setSearchTerm(params.searchParam || "");
+    setTitle(params.title || "");
+    setDescription(params.description || "");
+    setKeywords(params.keywords || "");
+    setContributorName(params.contributorName || "");
+    setSelectedCategory(params.categoryId || null);
+    fetchDocuments(params);
   }, [searchParams]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+  };
+
+  const handleDescriptionChange = (e) => {
+    setDescription(e.target.value);
+  };
+
+  const handleKeywordsChange = (e) => {
+    setKeywords(e.target.value);
+  };
+
+  const handleContributorNameChange = (e) => {
+    setContributorName(e.target.value);
   };
 
   const handleCategoryChange = (value) => {
@@ -392,8 +418,29 @@ export default function Home() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchTerm) params.set('searchParam', searchTerm);
+    if (title) params.set('title', title);
+    if (description) params.set('description', description);
+    if (keywords) params.set('keywords', keywords);
+    if (contributorName) params.set('contributorName', contributorName);
     if (selectedCategory) params.set('categoryId', selectedCategory);
     router.push(`?${params.toString()}`);
+  };
+  const handleReset = () => {
+    router.push(`/`);
+  };
+
+  const renderPopContent = (uri) => {
+    if (!uri) return <p>No document found</p>;
+
+    if (uri.toString().includes('pdf')) {
+      return <div className="bg-white w-full z-20 h-1/2 max-md:w-full">
+        <ViewPdf pdfUrl={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} />
+      </div>
+    } else {
+      return <div className="bg-white z-20 w-full h-[500px] max-md:h-full max-md:w-full overflow-y-auto">
+        <img src={`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/${uri}`} alt="Document" className="mb-4 w-full" />
+      </div>
+    }
   };
 
   return (
@@ -409,9 +456,27 @@ export default function Home() {
             ) : (
               <>
                 <Input
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
+                  placeholder="Title"
+                  value={title}
+                  onChange={handleTitleChange}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Description"
+                  value={description}
+                  onChange={handleDescriptionChange}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Keywords"
+                  value={keywords}
+                  onChange={handleKeywordsChange}
+                  className="mb-2"
+                />
+                <Input
+                  placeholder="Contributor Name"
+                  value={contributorName}
+                  onChange={handleContributorNameChange}
                   className="mb-2"
                 />
                 <Select
@@ -427,6 +492,8 @@ export default function Home() {
                   ))}
                 </Select>
                 <Button onClick={handleSearch} className="mt-2 w-full bg-blue-500 text-white">Search</Button>
+                <button onClick={handleReset} className="mt-2 w-full text-sm  text-blue-500">Reset</button>
+
               </>
             )}
           </div>
@@ -442,12 +509,17 @@ export default function Home() {
                   <Skeleton active paragraph={{ rows: 3 }} />
                 </>
               ) : (
-                documents.map((doc) => (
-                  <>
-                    <DocumentCard key={doc.id} document={doc} handleLike={handleLike} handleDislike={handleDislike} />
-                  </>
-
-                ))
+               <div>
+                {documents.length == 0 ?
+                <p>No resources found</p> :
+                    documents.map((doc) => (
+                      <>
+                        <DocumentCard key={doc.id} document={doc} />
+                      </>
+                    ))
+                }
+               </div>
+              
               )}
             </div>
           </div>
@@ -467,4 +539,17 @@ export default function Home() {
       <FooterBar />
     </>
   );
+}
+
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Home />
+        </Suspense>
+      </nav>
+    </>
+  )
 }

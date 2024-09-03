@@ -11,8 +11,8 @@ const AccountsPage = () => {
     const [editingKey, setEditingKey] = useState('');
     const [filters, setFilters] = useState({
         name: '',
-        status: '',
-        role: '',
+        // status: '',
+        // role: '',
     });
 
     useEffect(() => {
@@ -22,8 +22,9 @@ const AccountsPage = () => {
     const fetchAccounts = async () => {
         setLoading(true);
         try {
-            const { name, status, role } = filters;
-            // http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/admin?name=${name}&status=${status}&role=${role}&pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc
+            // const { name, status, role } = filters;
+            const query = new URLSearchParams(filters).toString();
+            // http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/admin?${query}&pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc
             const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/admin?pageNumber=0&pageSize=10&sortBy=createdOn&sortDir=desc`);
             const data = await response.json();
             setAccounts(data.content);
@@ -234,7 +235,7 @@ const AccountsPage = () => {
                     onSearch={(value) => handleFilterChange('name', value)}
                     enterButton
                 />
-                <Select
+                {/* <Select
                     placeholder="Select Status"
                     onChange={(value) => handleFilterChange('status', value)}
                     className="w-40"
@@ -242,8 +243,8 @@ const AccountsPage = () => {
                     <Option value="">All</Option>
                     <Option value="ACTIVATED">Activated</Option>
                     <Option value="DEACTIVATED">Deactivated</Option>
-                </Select>
-                <Select
+                </Select> */}
+                {/* <Select
                     placeholder="Select Role"
                     onChange={(value) => handleFilterChange('role', value)}
                     className="w-40"
@@ -251,7 +252,7 @@ const AccountsPage = () => {
                     <Option value="">All</Option>
                     <Option value="STUDENT">Student</Option>
                     <Option value="ADMIN">Admin</Option>
-                </Select>
+                </Select> */}
             </div>
             <Table
                 components={{

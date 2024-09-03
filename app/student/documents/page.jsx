@@ -10,6 +10,7 @@ const { Option } = Select;
 const Page = () => {
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [likes,setLikes] = useState({})
   const [filters, setFilters] = useState({
     title: "",
     description: "",
@@ -17,6 +18,30 @@ const Page = () => {
     contributorName: "",
     categoryId: "",
   });
+
+  const fetchLikes = async (resourceId)=>{
+    try {
+      const response = await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/likes/${resourceId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setLikes(data); // Extract items from the response
+    } catch (error) {
+      message.error('Failed to fetch recent items');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(()=>{
+    fetchLikes(document.id);
+
+  },[])
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -45,7 +70,7 @@ const Page = () => {
       /(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/,
       "$1"
     );
-    await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resource/${id}`, {
+    await fetch(`http://ec2-13-60-59-168.eu-north-1.compute.amazonaws.com:8087/resources/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -75,22 +100,6 @@ const Page = () => {
       title: "Keywords",
       dataIndex: "keywords",
       key: "keywords",
-    },
-    {
-      title: "Contributor Name",
-      dataIndex: "contributorName",
-      key: "contributorName",
-    },
-    {
-      title: "Contributor Email",
-      dataIndex: "contributorEmail",
-      key: "contributorEmail",
-    },
-    {
-      title: "Likes",
-      dataIndex: "likes",
-      key: "likes",
-      render: (likes) => likes.length,
     },
     {
       title: "Status",
